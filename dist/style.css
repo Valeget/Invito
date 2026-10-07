@@ -1,0 +1,786 @@
+:root {
+  --bg: #0e0707;
+  --velvet-dark: #3d040c;
+  --velvet: #8a0e1b;
+  --velvet-light: #b8192b;
+  --gold-dark: #7a5a1e;
+  --gold: #d9b45a;
+  --gold-light: #f6e3a1;
+  --ivory: #f4ead8;
+  --font-title: "Playfair Display", Georgia, serif;
+  --font-body: "Cormorant Garamond", Georgia, serif;
+  --open-ms: 2.6s;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+button {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;   /* niente doppio tocco per ingrandire sui tasti */
+}
+
+img { -webkit-user-drag: none; }
+
+html {
+  background: #000;
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  overflow-x: hidden;
+  scrollbar-width: none; /* niente barre di scorrimento (la pagina scorre comunque) */
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar { display: none; }
+
+body {
+  background: var(--bg);
+  color: var(--ivory);
+  font-family: var(--font-body);
+  font-size: 18px;
+  overflow-x: hidden;
+}
+
+body.is-locked { overflow: hidden; }
+html:has(body.is-locked) { overflow: hidden; }
+body.is-locked { position: fixed; inset: 0; width: 100%; }
+
+/* ---------- 1. Caricamento ---------- */
+.loader {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-content: center;
+  gap: 18px;
+  text-align: center;
+  background: var(--bg);
+  transition: opacity .6s ease, visibility .6s;
+}
+
+.loader__text {
+  font-style: italic;
+  font-size: 1.25rem;
+  color: var(--gold);
+  letter-spacing: .03em;
+}
+
+.loader__bar {
+  width: min(220px, 60vw);
+  height: 2px;
+  margin: 0 auto;
+  background: rgba(217, 180, 90, .2);
+  overflow: hidden;
+}
+
+.loader__bar span {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--gold);
+  transition: width .4s ease;
+}
+
+body.is-loaded .loader { opacity: 0; visibility: hidden; }
+
+/* ---------- 2. Palco: le figure del quadro galleggiano sul suo sfondo ---------- */
+.stage {
+  position: relative;
+  height: 100vh;
+  height: 100svh;
+  overflow: hidden;
+  background: var(--bg);
+  perspective: 1200px;
+  perspective-origin: 50% 45%;
+}
+
+/* La "telecamera": all'inizio guarda il quadro da 60° dall'alto e da più lontano,
+   poi scende fino a trovarsi esattamente davanti, ad altezza d'occhi */
+.scene {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transform: translateY(14vh) translateZ(-120px) rotateX(-60deg);
+  will-change: transform;
+  transition: transform 4.5s cubic-bezier(.45, 0, .15, 1) .2s;
+}
+
+body.is-open .scene { transform: none; }
+
+/* Lo sfondo del quadro senza le figure: un piano più indietro, ingrandito
+   quanto basta per coprire tutto il palco quando la telecamera è davanti */
+.backdrop,
+.vignette {
+  position: absolute;
+  inset: -20px;
+  transform: translateZ(-110px) scale(1.1);
+}
+
+/* la vignettatura sta appena davanti allo sfondo, per non sfarfallare */
+.vignette { transform: translateZ(-109px) scale(1.1); }
+
+.backdrop {
+  background: url("img/sfondo.jpg") center / cover no-repeat, #1a1418;
+  filter: blur(3px) brightness(.6) saturate(.9);
+}
+
+/* Le figure in primo piano, intere, con spazio sotto per la scritta */
+.figure {
+  position: absolute;
+  top: 3vh;
+  bottom: calc(190px + env(safe-area-inset-bottom));
+  left: 4%;
+  right: 4%;
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 2s ease .8s, transform 3s cubic-bezier(.2, .7, .2, 1) .8s;
+}
+
+body.is-open .figure { opacity: 1; transform: none; }
+
+.figure__float {
+  height: 100%;
+  will-change: transform;
+  animation: float 7s ease-in-out infinite;
+}
+
+.figure img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 24px 28px rgba(0, 0, 0, .6));
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(-1deg); }
+  50%      { transform: translateY(-18px) rotate(1deg); }
+}
+
+/* Velo scuro che si dissolve: il quadro passa dalla penombra alla luce */
+.stage::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: #000;
+  opacity: .45;
+  pointer-events: none;
+  transition: opacity 2.5s ease .6s;
+}
+
+body.is-open .stage::before { opacity: 0; }
+
+/* Luce calda da sinistra, come nel quadro, e ombreggiatura ai bordi */
+.vignette {
+  pointer-events: none;
+  background:
+    linear-gradient(to top, rgba(0, 0, 0, .7), transparent 32%),
+    radial-gradient(ellipse 70% 55% at 0% 22%, rgba(236, 196, 104, .34), rgba(236, 196, 104, .1) 45%, transparent 75%),
+    radial-gradient(ellipse 75% 70% at 50% 45%, transparent 55%, rgba(0, 0, 0, .55));
+}
+
+.caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(86px + env(safe-area-inset-bottom));
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 16px;
+  text-align: center;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, .8);
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 1.2s ease, transform 1.2s ease;
+}
+
+.caption__title {
+  max-width: 640px;
+  font-family: var(--font-title);
+  font-size: clamp(1.05rem, 3.8vw, 1.45rem);
+  line-height: 1.3;
+}
+
+.caption__thanks {
+  margin-top: 6px;
+  font-family: "Pinyon Script", cursive;
+  font-size: clamp(2.6rem, 11vw, 3.6rem);
+  line-height: 1.1;
+  color: var(--gold);
+}
+
+body.is-ready .caption { opacity: 1; transform: none; }
+
+/* Indicazione di scorrere */
+.scroll-hint {
+  position: absolute;
+  left: 50%;
+  bottom: calc(18px + env(safe-area-inset-bottom));
+  z-index: 5;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  color: var(--gold);
+  text-decoration: none;
+  font-size: .95rem;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, .8);
+  opacity: 0;
+  transition: opacity 1s ease .4s;
+}
+
+body.is-ready .scroll-hint { opacity: 1; }
+
+.scroll-hint svg { animation: bounce 1.8s ease-in-out infinite; }
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(6px); }
+}
+
+/* ---------- Sipario ---------- */
+.curtain {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* Le tende sporgono oltre i bordi dello schermo, così quando oscillano non
+   lasciano scoperti gli angoli. Si aprono comprimendosi verso l'esterno (solo
+   transform: niente ricalcolo del layout, l'animazione resta fluida). */
+.curtain__panel {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 71%;
+  will-change: transform;
+  transition: transform var(--open-ms) cubic-bezier(.65, 0, .25, 1);
+}
+
+.curtain__panel--left  { left: -20%;  transform-origin: left center;  --amp: 6; }
+.curtain__panel--right { right: -20%; transform-origin: right center; --amp: -6; }
+
+/* Si raccolgono verso l'esterno e scivolano fuori dallo schermo */
+body.is-open .curtain__panel--left  { transform: translateX(-45%) scaleX(.45); }
+body.is-open .curtain__panel--right { transform: translateX(45%) scaleX(.45); }
+
+.curtain__swing {
+  height: 100%;
+  transform-origin: 50% 0;
+  will-change: transform;
+  background:
+    /* luce dall'alto e ombra verso il pavimento */
+    linear-gradient(to bottom, rgba(255, 220, 220, .08), transparent 25%, transparent 70%, rgba(0, 0, 0, .45)),
+    /* pieghe del velluto */
+    repeating-linear-gradient(90deg,
+      var(--velvet-dark) 0px, var(--velvet) 16px, var(--velvet-light) 26px,
+      var(--velvet) 36px, var(--velvet-dark) 52px),
+    var(--velvet);
+  border-bottom: 6px solid var(--gold-dark);
+}
+
+/* L'orlo resta indietro mentre la tenda viene tirata, poi oscilla e si assesta */
+body.is-open .curtain__swing {
+  animation: sway 4s cubic-bezier(.3, .1, .3, 1) both;
+}
+
+@keyframes sway {
+  0%   { transform: skewX(0deg); }
+  15%  { transform: skewX(calc(var(--amp) * .55deg)); }
+  35%  { transform: skewX(calc(var(--amp) * 1deg)); }
+  54%  { transform: skewX(calc(var(--amp) * -.6deg)); }
+  69%  { transform: skewX(calc(var(--amp) * .32deg)); }
+  83%  { transform: skewX(calc(var(--amp) * -.14deg)); }
+  100% { transform: skewX(0deg); }
+}
+
+/* Mantovana in alto con bordo a festoni */
+.curtain__valance {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 11vh;
+  min-height: 64px;
+  will-change: transform;
+  transition: transform 1.4s cubic-bezier(.6, 0, .3, 1) 1.6s;
+  background:
+    linear-gradient(to bottom, transparent 82%, var(--gold) 82%, var(--gold-dark) 100%),
+    linear-gradient(to bottom, rgba(0, 0, 0, .35), transparent 40%),
+    repeating-linear-gradient(90deg, var(--velvet-dark) 0, var(--velvet) 14px, var(--velvet-light) 22px, var(--velvet) 30px, var(--velvet-dark) 44px);
+  -webkit-mask: radial-gradient(28px 14px at 50% 100%, transparent 98%, #000) 0 0 / 56px 100%;
+          mask: radial-gradient(28px 14px at 50% 100%, transparent 98%, #000) 0 0 / 56px 100%;
+}
+
+/* Dopo le tende laterali, anche la mantovana risale fuori dallo schermo */
+body.is-open .curtain__valance { transform: translateY(-110%); }
+
+/* ---------- 3. Il cielo ---------- */
+.cielo {
+  /* il cielo schiarisce schermata dopo schermata, senza salti di colore */
+  --cielo-1: #7fb8e2;
+  --cielo-2: #a9d1ef;
+  --cielo-3: #cfe6f6;
+  --cielo-4: #b9c6d6;
+  --cielo-finestra: #9fa6b5;  /* il cielo nella finestra del Cenacolo */
+  position: relative;
+  overflow: hidden;
+}
+
+/* Il nero del palco che schiarisce gradualmente fino al celeste */
+.cielo__alba {
+  height: 80vh;
+  height: 80svh;
+  background: linear-gradient(#000 0%, #0b1622 25%, #2b4f72 60%, var(--cielo-1) 100%);
+}
+
+/* Una schermata intera di cielo */
+.cielo__schermo {
+  position: relative;
+  min-height: 100vh;
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: 48px 24px;
+  background: linear-gradient(var(--cielo-1), var(--cielo-2));
+}
+
+.cielo__schermo--domanda {
+  /* intonaco vero della Cappella Sistina; in alto vi sfuma il cielo, in basso ne riesce */
+  background:
+    linear-gradient(to bottom,
+      var(--cielo-2) 0%, rgba(169, 209, 239, .85) 6%, rgba(169, 209, 239, .55) 14%,
+      rgba(169, 209, 239, .25) 22%, rgba(169, 209, 239, 0) 32%,
+      rgba(207, 230, 246, 0) 70%, rgba(207, 230, 246, .3) 80%,
+      rgba(207, 230, 246, .7) 91%, var(--cielo-3) 100%),
+    url("img/intonaco.jpg") center / cover no-repeat,
+    #d3ccb7;
+}
+.cielo__schermo--dopo {
+  align-items: end;
+  /* un tratto di cielo che porta al colore della finestra */
+  padding: 30vh 0 0;
+  padding: 30svh 0 0;
+  background: linear-gradient(var(--cielo-3) 0, var(--cielo-4) 15vh, var(--cielo-finestra) 30vh, var(--cielo-finestra));
+  background: linear-gradient(var(--cielo-3) 0, var(--cielo-4) 15svh, var(--cielo-finestra) 30svh, var(--cielo-finestra));
+}
+.cielo__schermo--attivita {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;          /* le immagini a tutta larghezza */
+  padding: 0 0 28px;
+  background: #000;              /* dopo il Cenacolo: nero */
+}
+
+.cielo__schermo--invio {
+  /* dal nero della schermata precedente alle Ninfee */
+  background:
+    linear-gradient(to bottom, #000 0%, rgba(0, 0, 0, .75) 10%, rgba(0, 0, 0, .3) 22%, rgba(0, 0, 0, 0) 34%),
+    url("img/ninfee.jpg") 50% 45% / cover no-repeat,
+    #3b4a7a;
+}
+
+.cielo__schermo[hidden]  { display: none; }
+
+/* Nuvole appena accennate: velature di bianco opaco che si spostano piano */
+.nuvola {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  background:
+    radial-gradient(closest-side at 30% 55%, rgba(255, 255, 255, .5), transparent),
+    radial-gradient(closest-side at 58% 40%, rgba(255, 255, 255, .42), transparent),
+    radial-gradient(closest-side at 78% 62%, rgba(255, 255, 255, .3), transparent),
+    radial-gradient(closest-side, rgba(255, 255, 255, .18), transparent);
+  will-change: transform;
+  animation: deriva 60s ease-in-out infinite alternate;
+}
+
+.nuvola--1 { width: 70vw;  height: 16vh; top: 8%;  left: -18%; }
+.nuvola--2 { width: 55vw;  height: 12vh; top: 30%; right: -15%; opacity: .7; animation-duration: 75s; animation-delay: -20s; }
+.nuvola--3 { width: 80vw;  height: 20vh; top: 62%; left: -25%; opacity: .6; animation-duration: 90s; animation-delay: -40s; }
+.nuvola--4 { width: 45vw;  height: 10vh; top: 84%; right: -10%; opacity: .8; animation-duration: 70s; animation-delay: -10s; }
+
+@keyframes deriva {
+  from { transform: translateX(-6vw); }
+  to   { transform: translateX(6vw); }
+}
+
+.cielo__testo {
+  position: relative;
+  max-width: 620px;
+  text-align: center;
+  color: #1c2e44;
+  text-shadow: 0 1px 12px rgba(255, 255, 255, .6);
+}
+
+.cielo__motivo {
+  font-family: var(--font-title);
+  font-size: clamp(1.35rem, 5.2vw, 2rem);
+  line-height: 1.35;
+}
+
+.cielo__premio {
+  margin-top: 3.2em;
+  font-style: italic;
+  font-size: clamp(1.3rem, 5vw, 1.8rem);
+  line-height: 1.4;
+}
+
+/* I riquadri Sì / No */
+.scelta__btn {
+  min-width: 120px;
+  padding: 14px 28px;
+  font-family: var(--font-title);
+  font-size: 1.3rem;
+  color: #1c2e44;
+  background: rgba(255, 255, 255, .55);
+  border: 1px solid rgba(28, 46, 68, .35);
+  border-radius: 10px;
+  box-shadow: 0 6px 18px rgba(28, 46, 68, .15);
+  cursor: pointer;
+  transition: transform .15s ease, background .2s ease;
+}
+
+.scelta__btn:active { transform: scale(.96); }
+.scelta__btn:focus-visible { outline: 2px solid #1c2e44; outline-offset: 3px; }
+
+/* ---------- La domanda con la Creazione di Adamo ---------- */
+.cielo__schermo--domanda { padding-left: 0; padding-right: 0; }
+
+.domanda {
+  position: relative;
+  width: 100%;
+  text-align: center;
+  color: #1c2e44;
+}
+
+.domanda__testo {
+  max-width: 620px;
+  margin: 0 auto;
+  padding: 0 24px;
+  text-shadow: 0 1px 12px rgba(255, 255, 255, .6);
+}
+
+/* Il particolare, a tutta larghezza, sfuma nel cielo su tutti i lati */
+.adamo {
+  position: relative;
+  width: 100%;
+  margin-top: clamp(16px, 4vh, 40px);
+}
+
+.adamo__img {
+  display: block;
+  width: 100%;
+  height: auto;
+  -webkit-mask-image:
+    linear-gradient(to bottom, transparent 0%, #000 22%, #000 78%, transparent 100%),
+    linear-gradient(to right, transparent 0%, #000 8%, #000 92%, transparent 100%);
+  -webkit-mask-composite: source-in;
+          mask-image:
+    linear-gradient(to bottom, transparent 0%, #000 22%, #000 78%, transparent 100%),
+    linear-gradient(to right, transparent 0%, #000 8%, #000 92%, transparent 100%);
+          mask-composite: intersect;
+}
+
+/* Il Sì esattamente tra il dito di Adamo e quello di Dio */
+.scelta__btn--si {
+  position: absolute;
+  left: 46.4%;
+  top: 47.7%;
+  transform: translate(-50%, -50%);
+  min-width: 0;
+  width: clamp(54px, 14vw, 170px);
+  padding: clamp(6px, 1.4vw, 14px) 0;
+  font-size: clamp(1rem, 3.6vw, 1.8rem);
+  color: #2a1a08;
+  background: linear-gradient(135deg, var(--gold-dark), var(--gold-light) 50%, var(--gold));
+  border-color: var(--gold-dark);
+  box-shadow: 0 0 22px rgba(255, 236, 170, .75), 0 6px 16px rgba(0, 0, 0, .25);
+}
+
+.scelta__btn--si:active { transform: translate(-50%, -50%) scale(.95); }
+
+/* Su schermi verticali: più alto e centrato sulle dita, così le mani sono grandi.
+   object-position usa le stesse percentuali del Sì, che quindi resta tra le dita */
+@media (max-aspect-ratio: 1/1) {
+  .adamo__img {
+    height: 54vw;
+    object-fit: cover;
+    object-position: 46.4% 47.7%;
+  }
+  .scelta__btn--si { width: 19vw; font-size: 1.15rem; }
+}
+
+/* Il No, più in basso e più modesto */
+.scelta__btn--no {
+  display: block;
+  min-width: 0;
+  margin: clamp(2px, 1vh, 12px) auto 0;
+  padding: 7px 18px;
+  font-size: 1rem;
+}
+
+/* Il messaggio di "errore" dopo ogni No */
+.errore {
+  margin: 1.6em auto 0;
+  max-width: 420px;
+  padding: 12px 16px;
+  font-size: 1.1rem;
+  color: #7a1c1c;
+  background: rgba(255, 235, 235, .85);
+  border: 1px solid rgba(122, 28, 28, .35);
+  border-radius: 8px;
+  text-shadow: none;
+}
+
+.errore.is-shaking { animation: scuoti .4s ease; }
+
+@keyframes scuoti {
+  0%, 100% { transform: translateX(0); }
+  20%      { transform: translateX(-8px); }
+  40%      { transform: translateX(8px); }
+  60%      { transform: translateX(-5px); }
+  80%      { transform: translateX(5px); }
+}
+
+/* ---------- Il Cenacolo: Gesù apre le braccia sui due giorni ---------- */
+.cenacolo {
+  position: relative;
+  width: 100%;                   /* a tutta larghezza */
+  padding-bottom: 110px;         /* spazio per i tasti sotto le mani */
+  /* dietro il dipinto il colore della finestra; sotto, sfuma nel nero */
+  background: linear-gradient(to bottom,
+    var(--cielo-finestra) 0, var(--cielo-finestra) calc(100% - 140px), #3a3f4a calc(100% - 70px), #000 100%);
+}
+
+/* Il dipinto con i tasti agganciati alle mani di Gesù */
+.cenacolo__quadro { position: relative; }
+.cenacolo__quadro picture { display: block; }
+
+/* In alto il dipinto sfuma nel cielo (soffitto e parete alta tagliati), in basso la tovaglia */
+.cenacolo__img {
+  display: block;
+  width: 100%;
+  height: auto;
+  /* su schermi bassi taglia la parte alta (finestre e cielo), mai Gesù, la tavola o i tasti */
+  max-height: calc(100vh - 120px);
+  max-height: calc(100svh - 120px);
+  object-fit: cover;
+  object-position: 50% 100%;
+  /* sfumature a curva morbida (smootherstep, niente bordo percepibile):
+     in alto, lunga, verso il cielo; in basso la tovaglia */
+  --sfumatura-cenacolo: linear-gradient(to bottom,
+    rgba(0, 0, 0, 0.000) 0.0%,
+    rgba(0, 0, 0, 0.005) 3.3%,
+    rgba(0, 0, 0, 0.035) 6.7%,
+    rgba(0, 0, 0, 0.104) 10.0%,
+    rgba(0, 0, 0, 0.210) 13.3%,
+    rgba(0, 0, 0, 0.347) 16.7%,
+    rgba(0, 0, 0, 0.500) 20.0%,
+    rgba(0, 0, 0, 0.653) 23.3%,
+    rgba(0, 0, 0, 0.790) 26.7%,
+    rgba(0, 0, 0, 0.896) 30.0%,
+    rgba(0, 0, 0, 0.965) 33.3%,
+    rgba(0, 0, 0, 0.995) 36.7%,
+    rgba(0, 0, 0, 1.000) 40.0%,
+    rgba(0, 0, 0, 1.000) 78.0%,
+    rgba(0, 0, 0, 0.995) 79.8%,
+    rgba(0, 0, 0, 0.965) 81.7%,
+    rgba(0, 0, 0, 0.896) 83.5%,
+    rgba(0, 0, 0, 0.790) 85.3%,
+    rgba(0, 0, 0, 0.653) 87.2%,
+    rgba(0, 0, 0, 0.500) 89.0%,
+    rgba(0, 0, 0, 0.347) 90.8%,
+    rgba(0, 0, 0, 0.210) 92.7%,
+    rgba(0, 0, 0, 0.104) 94.5%,
+    rgba(0, 0, 0, 0.035) 96.3%,
+    rgba(0, 0, 0, 0.005) 98.2%,
+    rgba(0, 0, 0, 0.000) 100.0%);
+  -webkit-mask-image: var(--sfumatura-cenacolo);
+          mask-image: var(--sfumatura-cenacolo);
+}
+
+/* I due tasti, appoggiati sotto le mani di Gesù */
+.giorno {
+  position: absolute;
+  /* le mani sono a una distanza fissa dal fondo del dipinto (17% della sua altezza piena),
+     espressa in larghezza schermo così regge anche quando la parte alta viene tagliata */
+  top: calc(100% - 13.2vw);
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: clamp(118px, 30vw, 200px);
+  padding: clamp(10px, 2.4vw, 16px) clamp(14px, 3vw, 24px);
+  font-family: var(--font-title);
+  color: #1c2e44;
+  background: rgba(255, 252, 244, .9);
+  border: 2px solid var(--gold);
+  border-radius: 12px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, .35);
+  cursor: pointer;
+  transition: transform .15s ease, box-shadow .2s ease, background .2s ease;
+}
+
+/* posizione delle mani di Gesù nel ritaglio stretto (schermo verticale)... */
+.giorno--sabato   { left: 23.7%; }
+.giorno--domenica { left: 76.3%; }
+
+/* ...e in quello largo con più apostoli (schermo orizzontale) */
+@media (min-aspect-ratio: 1/1) {
+  .giorno           { top: calc(100% - 7.4vw); }
+  .giorno--sabato   { left: 35.25%; }
+  .giorno--domenica { left: 64.75%; }
+}
+
+.giorno:active { transform: translateX(-50%) scale(.96); }
+.giorno:focus-visible { outline: 2px solid #1c2e44; outline-offset: 3px; }
+
+.giorno__nome { font-size: clamp(1.1rem, 4.4vw, 1.6rem); }
+.giorno__data { font-size: clamp(1.5rem, 6vw, 2.3rem); font-weight: 700; letter-spacing: .04em; }
+
+.giorno.is-scelto {
+  color: #2a1a08;
+  background: linear-gradient(135deg, var(--gold-dark), var(--gold-light) 50%, var(--gold));
+}
+
+/* ---------- Cosa fare: immagini che si alternano e scelte ---------- */
+.vetrina {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 38vh;
+  min-height: 38svh;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 18%, #000 78%, transparent 100%);
+          mask-image: linear-gradient(to bottom, transparent 0%, #000 18%, #000 78%, transparent 100%);
+}
+
+.vetrina__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transform: scale(1.06);
+  transition: opacity 1.4s ease, transform 6s ease-out;
+}
+
+.vetrina__img.is-attiva { opacity: 1; transform: scale(1); }
+.vetrina__img:not(.is-attiva) { pointer-events: none; }   /* il suggerimento è quello della foto visibile */
+
+.attivita {
+  position: relative;
+  padding: 0 20px;
+  text-align: center;
+  color: var(--ivory);
+}
+
+.attivita .cielo__motivo { text-shadow: none; }
+
+.attivita__scelte {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  max-width: 640px;
+  margin: 1.4em auto 0;
+}
+
+.attivita__btn {
+  padding: 12px 22px;
+  font-family: var(--font-title);
+  font-size: clamp(1.05rem, 4vw, 1.25rem);
+  color: var(--ivory);
+  background: rgba(255, 255, 255, .06);
+  border: 1px solid rgba(217, 180, 90, .55);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: transform .15s ease, background .2s ease;
+}
+
+.attivita__btn:active { transform: scale(.96); }
+.attivita__btn:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 3px; }
+
+.attivita__btn.is-scelto {
+  color: #2a1a08;
+  border-color: var(--gold-dark);
+  background: linear-gradient(135deg, var(--gold-dark), var(--gold-light) 50%, var(--gold));
+}
+
+.attivita__altro {
+  display: block;
+  width: 100%;
+  max-width: 520px;
+  margin: 16px auto 0;
+  padding: 12px 14px;
+  font: inherit;
+  font-size: 1.15rem;
+  color: var(--ivory);
+  background: rgba(255, 255, 255, .07);
+  border: 1px solid rgba(217, 180, 90, .55);
+  border-radius: 12px;
+  resize: vertical;
+}
+
+.attivita__altro::placeholder { color: rgba(244, 234, 216, .5); }
+.attivita__altro[hidden] { display: none; }
+
+
+.attivita__conferma {
+  display: block;
+  margin: 12px auto 0;
+  padding: 10px 26px;
+  font-family: var(--font-title);
+  font-size: 1.1rem;
+  color: #2a1a08;
+  background: linear-gradient(135deg, var(--gold-dark), var(--gold-light) 50%, var(--gold));
+  border: 1px solid var(--gold-dark);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.attivita__conferma[hidden] { display: none; }
+
+/* ---------- Invio ---------- */
+.invio__btn {
+  /* stesso stile dei tasti Sabato / Domenica */
+  padding: clamp(12px, 2.6vw, 18px) clamp(26px, 5vw, 40px);
+  font-family: var(--font-title);
+  font-size: clamp(1.4rem, 5.6vw, 2.1rem);
+  font-weight: 700;
+  letter-spacing: .04em;
+  color: #1c2e44;
+  background: rgba(255, 252, 244, .9);
+  border: 2px solid var(--gold);
+  border-radius: 12px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, .35);
+  cursor: pointer;
+  transition: transform .15s ease, box-shadow .2s ease, background .2s ease;
+}
+
+.invio__btn:active { transform: scale(.96); }
+.invio__btn:focus-visible { outline: 2px solid #1c2e44; outline-offset: 3px; }
+
+/* Animazioni ridotte per chi le ha disattivate */
+@media (prefers-reduced-motion: reduce) {
+  body.is-open .curtain__swing, .scroll-hint svg, .figure__float, .nuvola { animation: none; }
+  .figure { transition-duration: .6s; }
+  .scene { transform: none; transition: none; }
+  .vetrina__img { transition: opacity .6s ease; transform: none; }
+}
+
+/* Effetti al passaggio del mouse: solo su dispositivi con mouse */
+@media (hover: hover) {
+  .scelta__btn:hover { background: rgba(255, 255, 255, .8); }
+  .scelta__btn--si:hover  { background: linear-gradient(135deg, var(--gold), #fff3c8 50%, var(--gold-light)); }
+  .giorno:not(.is-scelto):hover  { background: #fff; box-shadow: 0 12px 28px rgba(0, 0, 0, .45); }
+  .attivita__btn:not(.is-scelto):hover  { background: rgba(217, 180, 90, .18); }
+  .invio__btn:hover  { background: #fff; box-shadow: 0 12px 28px rgba(0, 0, 0, .45); }
+}

@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#000000">
+<meta name="format-detection" content="telephone=no">
+<title>Un invito per te</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=Pinyon+Script&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="is-locked">
+
+  <!-- 1. Caricamento -->
+  <div class="loader" aria-hidden="true">
+    <p class="loader__text">Ci siamo quasi…</p>
+    <div class="loader__bar"><span></span></div>
+  </div>
+
+  <!-- 2. Palco con sipario e quadro -->
+  <section class="stage" id="stage">
+    <!-- Scena 3D: la telecamera parte dall'alto e scende davanti al quadro -->
+    <div class="scene">
+      <div class="backdrop"></div>
+      <div class="vignette"></div>
+      <div class="figure">
+        <div class="figure__float">
+          <img src="img/figure.webp" alt="Il Tempo rapisce la Bellezza, Cavalier d’Arpino">
+        </div>
+      </div>
+    </div>
+
+    <p class="caption">
+      <span class="caption__title">Il Cavalier d’Arpino e tutta la sua Critica ringrazia:</span>
+      <span class="caption__thanks">Raffaella</span>
+    </p>
+
+    <a class="scroll-hint" href="#cielo">
+      <span>Scorri</span>
+      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </a>
+
+    <div class="curtain" aria-hidden="true">
+      <div class="curtain__panel curtain__panel--left"><div class="curtain__swing"></div></div>
+      <div class="curtain__panel curtain__panel--right"><div class="curtain__swing"></div></div>
+      <div class="curtain__valance"></div>
+    </div>
+  </section>
+
+  <!-- 3. Il cielo: il nero del quadro schiarisce fino al celeste -->
+  <section class="cielo" id="cielo">
+    <div class="cielo__alba" aria-hidden="true"></div>
+    <div class="cielo__schermo">
+      <div class="nuvola nuvola--1" aria-hidden="true"></div>
+      <div class="nuvola nuvola--2" aria-hidden="true"></div>
+      <div class="nuvola nuvola--3" aria-hidden="true"></div>
+      <div class="nuvola nuvola--4" aria-hidden="true"></div>
+      <div class="cielo__testo">
+        <p class="cielo__motivo">Per il suo impegno e costanza nella tesi nonostante i capricci di quella rompipalle della sua relatrice.</p>
+        <p class="cielo__premio">Come ricompensa le viene gentilmente offerta un’uscita che non ha nessun altro intento, quasi, che di rallegrare la promessa laureanda</p>
+      </div>
+    </div>
+
+    <!-- La domanda: qui la pagina finisce, finché non risponde Sì -->
+    <!-- Il cielo diventa l'intonaco dell'affresco: la Creazione di Adamo sembra dipinta sulla stessa parete -->
+    <div class="cielo__schermo cielo__schermo--domanda" id="domanda">
+      <div class="domanda">
+        <p class="cielo__motivo domanda__testo">Ella ha ancora la cortese intenzione di uscire con il suo umile scriba?</p>
+        <!-- Creazione di Adamo (Michelangelo): le mani un po' più distanti per far spazio al Sì tra le dita -->
+        <div class="adamo">
+          <img class="adamo__img" src="img/adamo-mani.jpg" width="1360" height="440"
+               alt="Particolare della Creazione di Adamo di Michelangelo: le mani di Dio e di Adamo">
+          <button type="button" class="scelta__btn scelta__btn--si" id="btn-si">Sì</button>
+        </div>
+        <button type="button" class="scelta__btn scelta__btn--no" id="btn-no">No</button>
+        <p class="errore" id="errore" role="alert" hidden></p>
+      </div>
+    </div>
+
+    <!-- Si apre solo dopo il Sì -->
+    <div class="cielo__schermo cielo__schermo--dopo" id="dopo" hidden>
+      <!-- Il cielo della pagina confluisce nella finestra dietro Gesù -->
+      <div class="cenacolo">
+        <div class="cenacolo__quadro">
+          <!-- schermo verticale: Gesù da vicino; schermo orizzontale: più apostoli, così tutto sta in una schermata -->
+          <picture>
+            <source media="(min-aspect-ratio: 1/1)" srcset="img/cenacolo-largo.jpg" width="2000" height="872">
+            <img class="cenacolo__img" src="img/cenacolo-gesu.jpg" width="1120" height="872"
+                 alt="Particolare del Cenacolo di Leonardo: Gesù al centro apre le braccia sulla tavola">
+          </picture>
+        <button type="button" class="giorno giorno--sabato" data-giorno="Sabato 09/09">
+          <span class="giorno__nome">Sabato</span><span class="giorno__data">09/09</span>
+        </button>
+        <button type="button" class="giorno giorno--domenica" data-giorno="Domenica 10/09">
+          <span class="giorno__nome">Domenica</span><span class="giorno__data">10/09</span>
+        </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Si apre solo dopo aver scelto il giorno -->
+    <div class="cielo__schermo cielo__schermo--attivita" id="attivita" hidden>
+      <div class="vetrina" aria-hidden="true">
+        <img class="vetrina__img is-attiva" src="img/attivita-roma.jpg" alt="">
+        <!-- Foto: "Roma, galleria borghese, allestimento mostra su gianlorenzo bernini, 2017" di Sailko, CC BY 3.0,
+             https://commons.wikimedia.org/wiki/File:Roma,_galleria_borghese,_allestimento_mostra_su_gianlorenzo_bernini,_2017,_01.jpg
+             Le altre foto della vetrina sono CC0 / pubblico dominio. -->
+        <img class="vetrina__img" src="img/attivita-mostra.jpg" alt="" title="Galleria Borghese — foto di Sailko, CC BY 3.0, Wikimedia Commons">
+        <img class="vetrina__img" src="img/attivita-bowling.jpg" alt="">
+        <img class="vetrina__img" src="img/attivita-cinema.jpg" alt="">
+      </div>
+      <div class="attivita">
+        <p class="cielo__motivo">Cosa gradirebbe fare?</p>
+        <div class="attivita__scelte">
+          <button type="button" class="attivita__btn" data-attivita="passeggiata">Passeggiata</button>
+          <button type="button" class="attivita__btn" data-attivita="mostre">Mostre</button>
+          <button type="button" class="attivita__btn" data-attivita="sale giochi">Sale giochi</button>
+          <button type="button" class="attivita__btn" data-attivita="cinema">Cinema</button>
+          <button type="button" class="attivita__btn attivita__btn--altro" data-attivita="altro" aria-expanded="false" aria-controls="altro-testo">Altro</button>
+        </div>
+        <textarea class="attivita__altro" id="altro-testo" rows="3" placeholder="Scriva pure qui la sua idea… (Invio per confermare)" enterkeyhint="done" hidden></textarea>
+        <button type="button" class="attivita__conferma" id="altro-conferma" hidden>Conferma</button>
+      </div>
+    </div>
+
+    <!-- Si apre dopo la scelta dell'attività: sullo sfondo le Ninfee blu di Monet (Musée d'Orsay) -->
+    <div class="cielo__schermo cielo__schermo--invio" id="invio" hidden>
+      <button type="button" class="invio__btn" id="btn-invia">Invia dati</button>
+    </div>
+  </section>
+
+  <script src="script.js"></script>
+</body>
+</html>
