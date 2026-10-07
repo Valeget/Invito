@@ -329,6 +329,7 @@ body.is-open .curtain__valance { transform: translateY(-110%); }
   --cielo-3: #cfe6f6;
   --cielo-4: #b9c6d6;
   --cielo-finestra: #9fa6b5;  /* il cielo nella finestra del Cenacolo */
+  --cielo-luce: #eef5fb;       /* luce chiara da cui emerge il Cenacolo */
   position: relative;
   overflow: hidden;
 }
@@ -367,8 +368,9 @@ body.is-open .curtain__valance { transform: translateY(-110%); }
   /* un tratto di cielo che porta al colore della finestra */
   padding: 30vh 0 0;
   padding: 30svh 0 0;
-  background: linear-gradient(var(--cielo-3) 0, var(--cielo-4) 15vh, var(--cielo-finestra) 30vh, var(--cielo-finestra));
-  background: linear-gradient(var(--cielo-3) 0, var(--cielo-4) 15svh, var(--cielo-finestra) 30svh, var(--cielo-finestra));
+  /* sopra il dipinto il cielo si illumina e resta chiaro fino al Cenacolo */
+  background: linear-gradient(var(--cielo-3) 0, var(--cielo-luce) 30vh, var(--cielo-luce));
+  background: linear-gradient(var(--cielo-3) 0, var(--cielo-luce) 30svh, var(--cielo-luce));
 }
 .cielo__schermo--attivita {
   display: flex;
@@ -554,11 +556,30 @@ body.is-open .curtain__valance { transform: translateY(-110%); }
 .cenacolo {
   position: relative;
   width: 100%;                   /* a tutta larghezza */
-  padding-bottom: 110px;         /* spazio per i tasti sotto le mani */
+  --coda: 0px;                   /* spazio in più sotto, aggiunto dallo script per poter centrare */
+  padding-bottom: calc(110px + var(--coda));   /* spazio per i tasti sotto le mani */
   /* dietro il dipinto il colore della finestra; sotto, sfuma nel nero */
   background: linear-gradient(to bottom,
-    var(--cielo-finestra) 0, var(--cielo-finestra) calc(100% - 140px), #3a3f4a calc(100% - 70px), #000 100%);
+    var(--cielo-luce) 0, #dfe8f1 14%, #b9c3d0 34%, var(--cielo-finestra) 48%,
+    var(--cielo-finestra) calc(100% - 140px - var(--coda)), #3a3f4a calc(100% - 70px - var(--coda)),
+    #000 calc(100% - var(--coda)), #000 100%);
 }
+
+/* un alone di luce, come quella che entra dalle finestre, dove il cielo diventa dipinto */
+.cenacolo__quadro::before {
+  content: "";
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  top: -12%;
+  height: 46%;
+  z-index: 1;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 40%, rgba(255, 255, 255, .7), rgba(255, 255, 255, .25) 45%, transparent 72%);
+  mix-blend-mode: screen;
+}
+
+.giorno { z-index: 2; }
 
 /* Il dipinto con i tasti agganciati alle mani di Gesù */
 .cenacolo__quadro { position: relative; }
