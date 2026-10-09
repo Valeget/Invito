@@ -435,6 +435,13 @@ body.is-open .curtain__valance { transform: translateY(-110%); }
   line-height: 1.4;
 }
 
+/* Un piccolo paragrafo (circa tre righe) più giù nel cielo, sotto la promessa */
+.cielo__nota {
+  margin-top: 4em;
+  font-size: clamp(1.15rem, 4.4vw, 1.5rem);
+  line-height: 1.5;
+}
+
 /* I riquadri Sì / No */
 .scelta__btn {
   min-width: 120px;
